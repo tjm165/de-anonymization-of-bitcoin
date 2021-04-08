@@ -11,6 +11,15 @@ class Pair:
         self.address = address
         self.value = value
 
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __gt__(self, other):
+        return self.value > other.value
+
+    def __str__(self):
+        return str(self.__class__) + " Address: " + self.address + " Value: " + str(self.value)
+
 
 class Input(Pair):
 
@@ -20,7 +29,7 @@ class Input(Pair):
 
 class Output(Pair):
 
-   def __init__(self, address, value):
+    def __init__(self, address, value):
         super().__init__(address, value)
 
 
@@ -70,10 +79,12 @@ def parse_data(file_root):
             transaction_times[txID] = time
 
     # Sort transactions by time (ascending)
-    transaction_times = dict(sorted(transaction_times.items(), key=lambda v: v[1]))
+    transaction_times = dict(
+        sorted(transaction_times.items(), key=lambda v: v[1]))
 
     # Produce list of all transaction data
-    data = [(transaction_in[txID], transaction_out[txID]) for txID in transaction_times]
+    data = [(transaction_in[txID], transaction_out[txID])
+            for txID in transaction_times]
 
     # Write data to file
     file_name = file_root.split(os.sep)[-1]
