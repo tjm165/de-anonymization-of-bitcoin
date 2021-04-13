@@ -42,3 +42,33 @@ def multi_input_optimal_change(transaction):
     if opt_change == []:
         return multi_input(transaction)
     return opt_change
+
+
+# need to test
+def __get_shadow_data(transactions):
+    address_to_merchant_count = {}
+
+    for t in transactions:
+        for output in t.outputs:
+            address_to_merchant_count[output] += 1
+
+    return address_to_merchant_count
+
+# need to test
+
+
+def shadow(transaction, address_to_merchant_count, threshold):
+    """
+    threshold is asking "how many times does it appear on merchant count for us to assume merchant?"
+    """
+    outputs = transaction.outputs
+    inputs = transaction.inputs
+
+    # determine what could possibly be a change output
+    change = set(transaction.outputs.copy())
+    for output_i in outputs:
+        if address_to_merchant_count[output_i.address] >= threshold:
+            change.remove(output_i)
+
+    # now we have the possible change output. Cluster them with the inputs
+    return inputs + list(change)
