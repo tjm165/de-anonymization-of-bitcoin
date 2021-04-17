@@ -1,2 +1,7 @@
 Sandbox.ipynb
-/.ipynb_checkpoints
+archive/
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pkl
