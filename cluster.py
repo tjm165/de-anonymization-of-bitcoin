@@ -3,9 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+class Cluster:
+    def __init__(self, addresses):
+        self.addresses = addresses
+
 def cluster(transactions, heuristic, threshold=None):
     """
-    transactions is an array 
+    transactions is an array
     heuristics is a function. See heuristics.py for all functions
 
     returns a list of clusters
@@ -18,45 +22,34 @@ def cluster(transactions, heuristic, threshold=None):
         # Shadow heuristic relies on meta-data across multiple transactions
         address_to_merchant_count = heuristics.__get_shadow_data(transactions)
         for t in transactions:
-            clusters.append(heuristics.shadow(
-                t, address_to_merchant_count, threshold))
+            # TODO the format retured by this is different than the other hs
+            clusters.append(heuristics.shadow(t, address_to_merchant_count, threshold))
     else:
         # All other heursitics cluster based on current transaction only
-        seen_addresses = set()
+        # Map previously seen addresses to their cluster object
+        cluster_map = {}
         for t in transactions:
-            new_cluster = set(pair.address for pair in heuristic(t))
-            single_addresses = set(pair.address for pair in t.inputs + t.outputs).difference(new_cluster)
+            clustered_addresses = set(pair.address for pair in heuristic(t))
+            single_addresses = set(pair.address for pair in t.inputs + t.outputs).difference(clustered_addresses)
 
-            # Clustered addresses are added to the list of clusters
-            # Each address is marked as "seen"
-            if new_cluster:
-                clusters.append(new_cluster)
-                for address in new_cluster:
-                    seen_addresses.add(address)
+            # New cluster may overlap existing ones, join together
+            joined_cluster = clustered_addresses
+            for address in clustered_addresses:
+                if address in cluster_map:
+                    joined_cluster = joined_cluster.union(cluster_map[address].addresses)
 
-            # All unseen, unclustered addresses enter their own cluster
+            # Map all addresses in joined cluster to new cluster
+            new_cluster = Cluster(joined_cluster)
+            for address in joined_cluster:
+                cluster_map[address] = new_cluster
+
+            # Map all unseeen, single addresses to their own new cluster
             for address in single_addresses:
-                if address not in seen_addresses:
-                    clusters.append({address})
-                    seen_addresses.add(address)
-        
-        # Overlap between clusters likely exists - need to merge
-        to_merge = True
-        while to_merge:
-            to_merge = False
-            new_clusters = []
-            while clusters:
-                common, rest = clusters[0], clusters[1:]
-                clusters = []
-                for x in rest:
-                    if x.isdisjoint(common):
-                        clusters.append(x)
-                    else:
-                        to_merge = True
-                        common |= x
-                new_clusters.append(common)
-            clusters = new_clusters
-            
+                cluster_map[address] = Cluster({address})
+
+        # Extract clusters from cluster map
+        clusters = list(c.addresses for c in set(cluster_map.values()))
+
     return clusters
 
 
