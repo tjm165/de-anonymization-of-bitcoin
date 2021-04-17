@@ -50,7 +50,11 @@ def __get_shadow_data(transactions):
 
     for t in transactions:
         for output in t.outputs:
-            address_to_merchant_count[output] += 1
+            address = output.address
+            if address in address_to_merchant_count:
+                address_to_merchant_count[address] += 1
+            else:
+                address_to_merchant_count[address] = 1
 
     return address_to_merchant_count
 

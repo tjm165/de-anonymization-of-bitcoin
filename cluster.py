@@ -1,7 +1,7 @@
 import heuristics
 
 
-def cluster(transactions, heuristic, threshold):
+def cluster(transactions, heuristic, threshold=None):
     """
     transactions is an array 
     heuristics is a function. See heuristics.py for all functions
