@@ -18,6 +18,4 @@ def cluster(transactions, heuristic, threshold=None):
         for t in transactions:
             clusters.append(heuristic(t))
 
-    heuristic
-
     return clusters
