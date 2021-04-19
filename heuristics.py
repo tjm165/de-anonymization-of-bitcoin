@@ -1,6 +1,6 @@
 
 
-def optimal_change(transaction):
+def optimal_change(transaction, args=None):
     """
     If there is an output that is uniquely less than all inputs
     Then that output can be clustered with the inputs
@@ -24,7 +24,7 @@ def optimal_change(transaction):
     return []
 
 
-def multi_input(transaction):
+def multi_input(transaction, args=None):
     """
     Assume that all inputs are in a cluster together
     """
@@ -32,7 +32,7 @@ def multi_input(transaction):
     return inputs.copy()
 
 
-def multi_input_optimal_change(transaction):
+def multi_input_optimal_change(transaction, args=None):
     """
     If there is an output that is uniquely less than all inputs
     Then that output can be clustered with the inputs
@@ -61,7 +61,8 @@ def __get_shadow_data(transactions):
 # need to test
 
 
-def shadow(transaction, address_to_merchant_count, threshold):
+def shadow(transaction, args):
+    address_to_merchant_count, threshold = args
     """
     threshold is asking "how many times does it appear on merchant count for us to assume merchant?"
     """
