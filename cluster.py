@@ -1,6 +1,7 @@
 import heuristics
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 
 class Cluster:
@@ -27,7 +28,18 @@ def cluster(transactions, heuristic, threshold=None):
         threshold = 20
         args = (heuristics.__get_shadow_data(transactions), threshold)
 
+    i = 0
+    start_time = time.time()
+    next_percentage = 0
     for t in transactions:
+        i += 1
+        percentage = int((i / len(transactions)) * 100)
+        if percentage == next_percentage:
+            next_percentage += 5
+            minutes_elapsed = (time.time() - start_time) / 60
+            print("Percent Complete:", percentage,
+                  "                Minutes Elapsed", minutes_elapsed)
+
         clustered_addresses = set(pair.address for pair in heuristic(t, args))
         single_addresses = set(
             pair.address for pair in t.inputs + t.outputs).difference(clustered_addresses)
