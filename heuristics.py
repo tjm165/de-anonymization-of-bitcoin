@@ -1,32 +1,30 @@
+import os
+import pickle
 
 
 def optimal_change(transaction, args=None):
+	"""
+    If there is an output that is uniquely less than all inputs,
+    then that output can be clustered with the inputs
     """
-    If there is an output that is uniquely less than all inputs
-    Then that output can be clustered with the inputs
-    """
-    # sort the transactions
-    inputs = transaction.inputs
-    cluster = inputs.copy()
-    outputs = transaction.outputs
-
-    i = 0
-    found_uniquely_less = False
-    # stop once we found a uniquely less value
-    while (i < len(outputs) and not found_uniquely_less):
-        output_i = outputs[i]
-        found_uniquely_less = all(output_i < input_i for input_i in inputs)
-        if found_uniquely_less:
-            cluster.append(output_i)
-            return cluster
-
-        i += 1
-    return []
+	inputs = transaction.inputs
+	outputs = transaction.outputs
+	
+	if not inputs:
+		return []
+	
+	min_input = min(inputs).value
+	less_outputs = [o for o in outputs if o.value < min_input]
+	
+	if len(less_outputs) == 1:
+		return inputs.copy() + less_outputs
+	else:
+		return []
 
 
 def multi_input(transaction, args=None):
     """
-    Assume that all inputs are in a cluster together
+    Assume that all inputs are in a cluster together.
     """
     inputs = transaction.inputs
     return inputs.copy()
@@ -34,9 +32,9 @@ def multi_input(transaction, args=None):
 
 def multi_input_optimal_change(transaction, args=None):
     """
-    If there is an output that is uniquely less than all inputs
-    Then that output can be clustered with the inputs
-    Else cluster by inputs only
+    If there is an output that is uniquely less than all inputs,
+    then that output can be clustered with the inputs.
+    Else, cluster by inputs only
     """
     opt_change = optimal_change(transaction)
     if opt_change == []:
@@ -44,36 +42,45 @@ def multi_input_optimal_change(transaction, args=None):
     return opt_change
 
 
-# need to test
 def __get_shadow_data(transactions):
-    address_to_merchant_count = {}
+	"""
+	Get number of times each address appears as an output
+	Addresses with high output counts are likely merchants
+	"""
+	
+	# Load previously created file if available
+	pickle_file = 'dataset_3_shadow_metadata.pkl'
+	if os.path.exists(pickle_file):
+		with open(pickle_file, 'rb') as f:
+			return pickle.load(f)
+			
+	# Create dictionary of counts
+	address_to_merchant_count = {}
+	for t in transactions:
+		for output in t.outputs:
+			address = output.address
+			if address in address_to_merchant_count:
+				address_to_merchant_count[address] += 1
+			else:
+				address_to_merchant_count[address] = 1
+	with open(pickle_file, 'wb') as f:
+		pickle.dump(address_to_merchant_count, f)
 
-    for t in transactions:
-        for output in t.outputs:
-            address = output.address
-            if address in address_to_merchant_count:
-                address_to_merchant_count[address] += 1
-            else:
-                address_to_merchant_count[address] = 1
+	return address_to_merchant_count
 
-    return address_to_merchant_count
-
-# need to test
-
-
+	
 def shadow(transaction, args):
-    address_to_merchant_count, threshold = args
-    """
-    threshold is asking "how many times does it appear on merchant count for us to assume merchant?"
-    """
-    outputs = transaction.outputs
-    inputs = transaction.inputs
+	"""
+	If an output exceeds the threshold argument, then we assume that it belongs to a merchant
+	Note that this calculation is done in pre-processing to produce a list of merchants
+	Then, any remaining non-merchant output must be for change and can be clustered with the input
+	"""
+	merchants = args
+	outputs = transaction.outputs
+	inputs = transaction.inputs
 
-    # determine what could possibly be a change output
-    change = set(transaction.outputs.copy())
-    for output_i in outputs:
-        if address_to_merchant_count[output_i.address] >= threshold:
-            change.remove(output_i)
-
-    # now we have the possible change output. Cluster them with the inputs
-    return inputs + list(change)
+	non_merchant_outputs = [o for o in outputs if o.address not in merchants]
+	if len(outputs) > 1 and len(non_merchant_outputs) == 1:
+		return inputs.copy() + non_merchant_outputs
+	else:
+		return inputs.copy()
